@@ -1,0 +1,8 @@
+<resources>
+  <string name="app_name">MVI Demo</string>
+  <string name="login_header">Welcome</string>
+  <string name="login_username_hint">Username</string>
+  <string name="login_password_hint">Password</string>
+  <string name="login_button">Sign in</string>
+  <string name="login_hint">Correct credentials are \"hello\" and \"world\"</string>
+</resources>

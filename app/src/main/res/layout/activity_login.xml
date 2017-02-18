@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:focusableInTouchMode="true"
+    tools:context="com.tadfisher.mvidemo.LoginActivity">
+
+  <TextView
+      android:id="@+id/header"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginBottom="0dp"
+      android:layout_marginTop="8dp"
+      android:text="@string/login_header"
+      android:textAlignment="center"
+      android:textAppearance="@style/TextAppearance.AppCompat.Display1"
+      app:layout_constraintBottom_toTopOf="@+id/username_layout"
+      app:layout_constraintHorizontal_bias="0.5"
+      app:layout_constraintLeft_toLeftOf="parent"
+      app:layout_constraintRight_toRightOf="parent"
+      app:layout_constraintTop_toTopOf="parent"
+      app:layout_constraintVertical_chainStyle="packed"
+      tools:layout_constraintLeft_creator="1"
+      tools:layout_constraintRight_creator="1"
+      app:layout_constraintVertical_bias="0.100000024" />
+
+  <android.support.design.widget.TextInputLayout
+      android:id="@+id/username_layout"
+      android:layout_width="0dp"
+      android:layout_height="wrap_content"
+      android:layout_marginBottom="8dp"
+      android:layout_marginEnd="64dp"
+      android:layout_marginLeft="64dp"
+      android:layout_marginRight="64dp"
+      android:layout_marginStart="64dp"
+      android:layout_marginTop="16dp"
+      app:layout_constraintBottom_toTopOf="@+id/password_layout"
+      app:layout_constraintHorizontal_bias="0.0"
+      app:layout_constraintLeft_toLeftOf="parent"
+      app:layout_constraintRight_toRightOf="parent"
+      app:layout_constraintTop_toBottomOf="@+id/header"
+      tools:layout_constraintLeft_creator="1"
+      tools:layout_constraintRight_creator="1">
+
+    <android.support.design.widget.TextInputEditText
+        android:id="@+id/username"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/login_username_hint"
+        android:inputType="text"
+        android:textAlignment="viewStart"
+        tools:layout_editor_absoluteX="-26dp"
+        tools:layout_editor_absoluteY="12dp" />
+  </android.support.design.widget.TextInputLayout>
+
+  <android.support.design.widget.TextInputLayout
+      android:id="@+id/password_layout"
+      android:layout_width="0dp"
+      android:layout_height="wrap_content"
+      android:layout_marginBottom="8dp"
+      android:layout_marginEnd="64dp"
+      android:layout_marginLeft="64dp"
+      android:layout_marginRight="64dp"
+      android:layout_marginStart="64dp"
+      android:layout_marginTop="0dp"
+      app:layout_constraintBottom_toTopOf="@+id/login_button"
+      app:layout_constraintHorizontal_bias="0.0"
+      app:layout_constraintLeft_toLeftOf="parent"
+      app:layout_constraintRight_toRightOf="parent"
+      app:layout_constraintTop_toBottomOf="@+id/username_layout"
+      app:passwordToggleEnabled="true"
+      tools:layout_constraintLeft_creator="1"
+      tools:layout_constraintRight_creator="1">
+
+    <android.support.design.widget.TextInputEditText
+        android:id="@+id/password"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/login_password_hint"
+        android:inputType="textPassword"
+        android:textAlignment="viewStart"
+        tools:layout_editor_absoluteX="-26dp"
+        tools:layout_editor_absoluteY="12dp" />
+  </android.support.design.widget.TextInputLayout>
+
+  <Button
+      android:id="@+id/login_button"
+      style="@style/Widget.AppCompat.Button.Colored"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginBottom="8dp"
+      android:layout_marginEnd="0dp"
+      android:layout_marginTop="16dp"
+      android:text="@string/login_button"
+      app:layout_constraintBottom_toBottomOf="parent"
+      app:layout_constraintRight_toRightOf="@+id/password_layout"
+      app:layout_constraintTop_toBottomOf="@+id/password_layout"
+      tools:layout_constraintRight_creator="1"
+      tools:layout_constraintTop_creator="1" />
+
+  <TextView
+      android:id="@+id/login_hint"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginBottom="14dp"
+      android:text="@string/login_hint"
+      android:textAlignment="center"
+      app:layout_constraintBottom_toBottomOf="parent"
+      app:layout_constraintLeft_toLeftOf="parent"
+      app:layout_constraintRight_toRightOf="parent"
+      tools:layout_constraintBottom_creator="1"
+      tools:layout_constraintLeft_creator="1"
+      tools:layout_constraintRight_creator="1" />
+
+  <ProgressBar
+      android:id="@+id/login_progress"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginBottom="0dp"
+      android:layout_marginLeft="0dp"
+      android:layout_marginTop="0dp"
+      app:layout_constraintBottom_toBottomOf="@+id/login_button"
+      app:layout_constraintLeft_toLeftOf="@+id/password_layout"
+      app:layout_constraintTop_toTopOf="@+id/login_button"
+      app:layout_constraintVertical_bias="0.0"
+      tools:visibility="visible" />
+
+</android.support.constraint.ConstraintLayout>

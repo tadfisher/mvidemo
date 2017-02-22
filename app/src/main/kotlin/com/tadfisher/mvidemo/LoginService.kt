@@ -20,6 +20,6 @@ class FakeLoginService : LoginService {
             Completable.error(IllegalStateException("Incorrect username and password"))
           }
         }
-        .delay(10, TimeUnit.SECONDS, io(), true)
+        .delay(2, TimeUnit.SECONDS, io(), true)
   }
 }

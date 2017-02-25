@@ -1,5 +1,7 @@
 package com.tadfisher.mvidemo
 
+import com.tadfisher.mvidemo.LoginDialogue.Input
+import com.tadfisher.mvidemo.LoginDialogue.Input.*
 import io.reactivex.Completable
 import io.reactivex.subjects.PublishSubject
 import io.reactivex.subjects.Subject
@@ -8,9 +10,7 @@ import org.junit.Test
 
 class LoginDialogueTest {
 
-  val usernameTextChanges: Subject<CharSequence> = PublishSubject.create()
-  val passwordTextChanges: Subject<CharSequence> = PublishSubject.create()
-  val loginButtonClicks: Subject<Any> = PublishSubject.create()
+  val inputs: Subject<Input> = PublishSubject.create()
 
   val actions: Subject<LoginDialogue.Action> = PublishSubject.create()
 
@@ -23,13 +23,12 @@ class LoginDialogueTest {
 
   @Test
   fun mapsChangeCredentialsIntent() {
-    val testObserver =
-        dialogue.intent(usernameTextChanges, passwordTextChanges, loginButtonClicks).test()
+    val testObserver = dialogue.intent(inputs).test()
 
-    usernameTextChanges.onNext("")
-    passwordTextChanges.onNext("")
-    usernameTextChanges.onNext("foo")
-    passwordTextChanges.onNext("bar")
+    inputs.onNext(UsernameTextChange(""))
+    inputs.onNext(PasswordTextChange(""))
+    inputs.onNext(UsernameTextChange("foo"))
+    inputs.onNext(PasswordTextChange("bar"))
 
     testObserver.assertValues(
         changeCredentialsAction("", ""),
@@ -39,15 +38,14 @@ class LoginDialogueTest {
 
   @Test
   fun mapsAttemptLoginIntent() {
-    val testObserver =
-        dialogue.intent(usernameTextChanges, passwordTextChanges, loginButtonClicks).test()
+    val testObserver = dialogue.intent(inputs).test()
 
-    usernameTextChanges.onNext("foo")
-    passwordTextChanges.onNext("bar")
-    loginButtonClicks.onNext(Object())
+    inputs.onNext(UsernameTextChange("foo"))
+    inputs.onNext(PasswordTextChange("bar"))
+    inputs.onNext(LoginButtonClick)
 
-    usernameTextChanges.onNext("baz")
-    loginButtonClicks.onNext(Object())
+    inputs.onNext(UsernameTextChange("baz"))
+    inputs.onNext(LoginButtonClick)
 
     testObserver.assertValues(
         changeCredentialsAction("foo", "bar"),

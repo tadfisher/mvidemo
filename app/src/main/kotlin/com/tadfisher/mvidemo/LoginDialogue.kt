@@ -3,9 +3,10 @@ package com.tadfisher.mvidemo
 import com.tadfisher.mvidemo.LoginDialogue.Action
 import com.tadfisher.mvidemo.LoginDialogue.State
 import io.reactivex.Observable
-import io.reactivex.Observable.combineLatest
 import io.reactivex.Observable.just
+import io.reactivex.ObservableTransformer
 import io.reactivex.functions.BiFunction
+import rx.lang.kotlin.ofType
 
 /**
  * Describes the behavior of user interactions with this application.
@@ -33,9 +34,15 @@ class LoginDialogue constructor(val service: LoginService) {
     val isValid = username.isNotEmpty() && password.isNotEmpty()
   }
 
+  /** The raw user inputs to this dialogue. */
+  sealed class Input {
+    data class UsernameTextChange(val text: String) : Input()
+    data class PasswordTextChange(val text: String) : Input()
+    object LoginButtonClick : Input()
+  }
+
   /** The available actions our user can take. */
   sealed class Action {
-
     /** The user has changed the view's username or password values. */
     data class ChangeCredentials(val credentials: Credentials) : Action()
 
@@ -43,7 +50,7 @@ class LoginDialogue constructor(val service: LoginService) {
     data class AttemptLogin(val credentials: Credentials) : Action()
   }
 
-  /** The complete state of our view. */
+  /** The mutable state of our view. */
   data class State(
       val usernameFieldEnabled: Boolean = false,
       val passwordFieldEnabled: Boolean = false,
@@ -54,41 +61,33 @@ class LoginDialogue constructor(val service: LoginService) {
   )
 
   /** Map user input events to Actions. */
-  fun intent(usernameTextChanges: Observable<CharSequence>,
-             passwordTextChanges: Observable<CharSequence>,
-             loginButtonClicks: Observable<Any>): Observable<Action> {
-
+  fun intent(inputs: Observable<Input>): Observable<Action> {
     // Combine credentials fields
-    val credentialsEdits = combineLatest(usernameTextChanges, passwordTextChanges,
-        BiFunction { u: CharSequence, p: CharSequence -> Credentials(u.toString(), p.toString()) })
+    val credentialsEdits = Observable.combineLatest(
+        inputs.ofType<Input.UsernameTextChange>().map { it.text },
+        inputs.ofType<Input.PasswordTextChange>().map { it.text },
+        BiFunction(::Credentials))
 
-    // Convert credentials changes to action
-    val changeCredentialsActions = credentialsEdits.map { Action.ChangeCredentials(it) }
+    return Observable.merge(
+        // Convert credentials changes to action
+        credentialsEdits.map { Action.ChangeCredentials(it) },
 
-    // Convert login click to action
-    val attemptLoginActions = loginButtonClicks.withLatestFrom(credentialsEdits,
-        BiFunction { _: Any, c: Credentials -> Action.AttemptLogin(c) })
-
-    return Observable.merge(changeCredentialsActions, attemptLoginActions)
+        // Convert login click to
+        inputs.ofType<Input.LoginButtonClick>()
+            .withLatestFrom(credentialsEdits, BiFunction { _, c -> Action.AttemptLogin(c) }))
   }
 
   /** Map Actions to view state. */
   fun model(actions: Observable<Action>): Observable<State> {
     return actions.flatMap {
       when (it) {
-
-      // Toggle login button if credentials are populated
         is Action.ChangeCredentials ->
-          if (it.credentials.isValid) {
-            just(State(usernameFieldEnabled = true, passwordFieldEnabled = true,
-                loginButtonEnabled = true))
-          } else {
-            just(State(usernameFieldEnabled = true, passwordFieldEnabled = true,
-                loginButtonEnabled = false))
-          }
+          // Toggle login button if credentials are populated
+          Observable.just(State(usernameFieldEnabled = true, passwordFieldEnabled = true,
+              loginButtonEnabled = it.credentials.isValid))
 
-      // Attempt a login, streaming view state in response to network events
         is Action.AttemptLogin ->
+          // Attempt a login, streaming view state in response to network events
           service.login(it.credentials.username, it.credentials.password)
               .andThen(just(State(completed = true)))
               .startWith(just(State(progressBarVisible = true)))

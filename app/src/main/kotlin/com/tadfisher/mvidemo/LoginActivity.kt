@@ -45,12 +45,19 @@ class LoginActivity : RxAppCompatActivity() {
     setContentView(R.layout.activity_login)
 
     // Kicks off the dialogue by emitting input events to the view(model(intent)) composition.
-    view(
-        loginDialogue.model(
-            loginDialogue.intent(
-                usernameTextChanges = usernameField.textChanges(),
-                passwordTextChanges = passwordField.textChanges(),
-                loginButtonClicks = loginButton.clicks())))
+    input()
+        .compose(loginDialogue::intent)
+        .compose(loginDialogue::model)
+        .bindToLifecycle(this)
+        .observeOn(mainThread())
+        .subscribe(this::view)
+  }
+
+  fun input(): Observable<LoginDialogue.Input> {
+    return Observable.merge(
+        usernameField.textChanges().map { LoginDialogue.Input.UsernameTextChange(it.toString()) },
+        passwordField.textChanges().map { LoginDialogue.Input.PasswordTextChange(it.toString()) },
+        loginButton.clicks().map { LoginDialogue.Input.LoginButtonClick })
   }
 
   /**
@@ -63,21 +70,17 @@ class LoginActivity : RxAppCompatActivity() {
    * there isn't a simple intermediate representation for Android views (unlike an HTML DOM), so
    * we can make do by carefully modeling state.
    */
-  private fun view(state: Observable<LoginDialogue.State>) {
-    state.observeOn(mainThread())
-        .bindToLifecycle(this)
-        .subscribe { state ->
-          usernameField.isEnabled = state.usernameFieldEnabled
-          passwordField.isEnabled = state.passwordFieldEnabled
-          loginButton.isEnabled = state.loginButtonEnabled
-          progressBar.visibility = if (state.progressBarVisible) VISIBLE else INVISIBLE
-          passwordLayout.error = state.errorString
+  fun view(state: LoginDialogue.State) {
+    usernameField.isEnabled = state.usernameFieldEnabled
+    passwordField.isEnabled = state.passwordFieldEnabled
+    loginButton.isEnabled = state.loginButtonEnabled
+    progressBar.visibility = if (state.progressBarVisible) VISIBLE else INVISIBLE
+    passwordLayout.error = state.errorString
 
-          if (state.completed) {
-            Snackbar.make(root, "Login successful", Snackbar.LENGTH_INDEFINITE)
-                .setAction("Start over", { recreate() })
-                .show()
-          }
-        }
+    if (state.completed) {
+      Snackbar.make(root, "Login successful", Snackbar.LENGTH_INDEFINITE)
+          .setAction("Start over", { recreate() })
+          .show()
+    }
   }
 }

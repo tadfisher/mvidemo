@@ -4,13 +4,15 @@ import android.os.Bundle
 import android.support.design.widget.Snackbar
 import android.support.design.widget.TextInputLayout
 import android.view.View.INVISIBLE
-import android.view.View.VISIBLE
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
 import butterknife.bindView
+import com.jakewharton.rxbinding2.support.design.widget.error
 import com.jakewharton.rxbinding2.view.clicks
+import com.jakewharton.rxbinding2.view.enabled
+import com.jakewharton.rxbinding2.view.visibility
 import com.jakewharton.rxbinding2.widget.textChanges
 import com.trello.rxlifecycle2.components.support.RxAppCompatActivity
 import com.trello.rxlifecycle2.kotlin.bindToLifecycle
@@ -39,25 +41,38 @@ class LoginActivity : RxAppCompatActivity() {
   val loginButton: Button by bindView(R.id.login_button)
   val progressBar: ProgressBar by bindView(R.id.login_progress)
 
+  val snackbar: Snackbar by lazy {
+    Snackbar.make(root, "Login successful", Snackbar.LENGTH_INDEFINITE)
+        .setAction("Start over", {
+          usernameField.text = ""
+          passwordField.text = ""
+          root.requestFocus()
+          recreate()
+        })
+  }
+
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
 
     setContentView(R.layout.activity_login)
 
-    // Kicks off the dialogue by emitting input events to the view(model(intent)) composition.
-    input()
+    // Kicks off the dialogue by subscribing to the model(intent(input)) composition.
+    view(input()
         .compose(loginDialogue::intent)
         .compose(loginDialogue::model)
-        .bindToLifecycle(this)
         .observeOn(mainThread())
-        .subscribe(this::view)
+        .share())
   }
 
+  /**
+   * Merge multiple streams of raw user input to a single Observable stream.
+   */
   fun input(): Observable<LoginDialogue.Input> {
     return Observable.merge(
         usernameField.textChanges().map { LoginDialogue.Input.UsernameTextChange(it.toString()) },
         passwordField.textChanges().map { LoginDialogue.Input.PasswordTextChange(it.toString()) },
-        loginButton.clicks().map { LoginDialogue.Input.LoginButtonClick })
+        loginButton.clicks().map { LoginDialogue.Input.LoginButtonClick }
+    ).bindToLifecycle(this)
   }
 
   /**
@@ -70,17 +85,12 @@ class LoginActivity : RxAppCompatActivity() {
    * there isn't a simple intermediate representation for Android views (unlike an HTML DOM), so
    * we can make do by carefully modeling state.
    */
-  fun view(state: LoginDialogue.State) {
-    usernameField.isEnabled = state.usernameFieldEnabled
-    passwordField.isEnabled = state.passwordFieldEnabled
-    loginButton.isEnabled = state.loginButtonEnabled
-    progressBar.visibility = if (state.progressBarVisible) VISIBLE else INVISIBLE
-    passwordLayout.error = state.errorString
-
-    if (state.completed) {
-      Snackbar.make(root, "Login successful", Snackbar.LENGTH_INDEFINITE)
-          .setAction("Start over", { recreate() })
-          .show()
-    }
+  fun view(states: Observable<LoginDialogue.State>) {
+    states.map { it.usernameFieldEnabled }.subscribe(usernameField.enabled())
+    states.map { it.passwordFieldEnabled }.subscribe(passwordField.enabled())
+    states.map { it.loginButtonEnabled }.subscribe(loginButton.enabled())
+    states.map { it.progressBarVisible }.subscribe(progressBar.visibility(INVISIBLE))
+    states.map { it.errorString ?: "" }.subscribe(passwordLayout.error())
+    states.map { it.completed }.subscribe(snackbar.shown())
   }
 }

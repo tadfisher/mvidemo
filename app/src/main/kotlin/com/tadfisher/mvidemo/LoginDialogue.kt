@@ -4,9 +4,10 @@ import com.tadfisher.mvidemo.LoginDialogue.Action
 import com.tadfisher.mvidemo.LoginDialogue.State
 import io.reactivex.Observable
 import io.reactivex.Observable.just
-import io.reactivex.ObservableTransformer
-import io.reactivex.functions.BiFunction
+import rx.lang.kotlin.combineLatest
+import rx.lang.kotlin.merge
 import rx.lang.kotlin.ofType
+import rx.lang.kotlin.withLatestFrom
 
 /**
  * Describes the behavior of user interactions with this application.
@@ -63,18 +64,21 @@ class LoginDialogue constructor(val service: LoginService) {
   /** Map user input events to Actions. */
   fun intent(inputs: Observable<Input>): Observable<Action> {
     // Combine credentials fields
-    val credentialsEdits = Observable.combineLatest(
+    val credentialsEdits = listOf(
         inputs.ofType<Input.UsernameTextChange>().map { it.text },
-        inputs.ofType<Input.PasswordTextChange>().map { it.text },
-        BiFunction(::Credentials))
+        inputs.ofType<Input.PasswordTextChange>().map { it.text }
+    ).combineLatest { (username, password) -> Credentials(username, password) }
+        // We don't want to duplicate this work for each subscriber
+        .share()
 
-    return Observable.merge(
+    return listOf(
         // Convert credentials changes to action
         credentialsEdits.map { Action.ChangeCredentials(it) },
 
-        // Convert login click to
-        inputs.ofType<Input.LoginButtonClick>()
-            .withLatestFrom(credentialsEdits, BiFunction { _, c -> Action.AttemptLogin(c) }))
+        // Convert login click to action
+        inputs.ofType<Input.LoginButtonClick>().withLatestFrom(credentialsEdits,
+            { _, credentials -> Action.AttemptLogin(credentials) })
+    ).merge()
   }
 
   /** Map Actions to view state. */
@@ -83,7 +87,9 @@ class LoginDialogue constructor(val service: LoginService) {
       when (it) {
         is Action.ChangeCredentials ->
           // Toggle login button if credentials are populated
-          Observable.just(State(usernameFieldEnabled = true, passwordFieldEnabled = true,
+          just(State(
+              usernameFieldEnabled = true,
+              passwordFieldEnabled = true,
               loginButtonEnabled = it.credentials.isValid))
 
         is Action.AttemptLogin ->
@@ -91,7 +97,9 @@ class LoginDialogue constructor(val service: LoginService) {
           service.login(it.credentials.username, it.credentials.password)
               .andThen(just(State(completed = true)))
               .startWith(just(State(progressBarVisible = true)))
-              .onErrorReturn { State(usernameFieldEnabled = true, passwordFieldEnabled = true,
+              .onErrorReturn { State(
+                  usernameFieldEnabled = true,
+                  passwordFieldEnabled = true,
                   errorString = it.message) }
       }
     }
